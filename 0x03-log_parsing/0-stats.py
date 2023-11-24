@@ -1,38 +1,37 @@
 #!/usr/bin/python3
+'''a script that reads stdin line by line and computes metrics'''
+
+
 import sys
 
-def print_stats(total_size, status_codes):
-    print("File size: {}".format(total_size))
-    for code in sorted(status_codes):
-        print("{}: {}".format(code, status_codes[code]))
+cache = {'200': 0, '301': 0, '400': 0, '401': 0,
+         '403': 0, '404': 0, '405': 0, '500': 0}
+total_size = 0
+counter = 0
 
-def parse_line(line):
-    parts = line.split()
-    if len(parts) >= 9:
-        return int(parts[-1])
-    return 0
+try:
+    for line in sys.stdin:
+        line_list = line.split(" ")
+        if len(line_list) > 4:
+            code = line_list[-2]
+            size = int(line_list[-1])
+            if code in cache.keys():
+                cache[code] += 1
+            total_size += size
+            counter += 1
 
-def main():
-    total_size = 0
-    status_codes = {}
+        if counter == 10:
+            counter = 0
+            print('File size: {}'.format(total_size))
+            for key, value in sorted(cache.items()):
+                if value != 0:
+                    print('{}: {}'.format(key, value))
 
-    try:
-        for i, line in enumerate(sys.stdin, 1):
-            file_size = parse_line(line)
-            total_size += file_size
+except Exception as err:
+    pass
 
-            status_code = line.split()[8]
-            if status_code.isdigit() and int(status_code) in [200, 301, 400, 401, 403, 404, 405, 500]:
-                status_codes[int(status_code)] = status_codes.get(int(status_code), 0) + 1
-
-            if i % 10 == 0:
-                print_stats(total_size, status_codes)
-
-    except KeyboardInterrupt:
-        pass
-
-    print_stats(total_size, status_codes)
-
-if __name__ == "__main__":
-    main()
-
+finally:
+    print('File size: {}'.format(total_size))
+    for key, value in sorted(cache.items()):
+        if value != 0:
+            print('{}: {}'.format(key, value))
